@@ -108,8 +108,56 @@ fun CepScreen(modifier: Modifier = Modifier) {
                     onValueChange = { cepState = it },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(text = "Qual CEP está buscando?") },
+                    /*
+                    *var call = RetrofitFactory().getEnderecoService().getEnderecosByUfCidadeRua(
+                            uf = ufState,
+                            cidade = cidadeState,
+                            rua = ruaState
+                        )
+
+                        call.enqueue(object: Callback<List<Endereco>> {
+                            override fun onResponse(
+                                call: Call<List<Endereco>>,
+                                response: Response<List<Endereco>>
+                            ) {
+//                                Log.i("TESTE", "${ response.body() }")
+                                enderecos = response.body()!!
+                            }
+
+                            //Quando a requisição não é bem sucedida, um 500 provavelmente não cai aqui porque é uma resposta
+                            //Entao teria que ter uma tratativa no onResponse, de só atuar quando for 200
+                            override fun onFailure(
+                                call: Call<List<Endereco>>,
+                                t: Throwable
+                            ) {
+                                Log.i("TESTE", "${t.message}")
+                            }
+                        })
+                    * */
                     trailingIcon = {
-                        IconButton( onClick = { /* TODO */ } ) {
+                        IconButton( onClick = {
+                            var call = RetrofitFactory().getEnderecoService().getEnderecoByCep(
+                                cep = cepState
+                            )
+                            call.enqueue(object: Callback<Endereco>{
+                                override fun onResponse(
+                                    call: Call<Endereco>,
+                                    response: Response<Endereco>
+                                ) {
+                                    Log.i("TESTE", "${ response.body() }")
+                                    enderecos = listOf(response.body()!!)
+                                }
+
+                                override fun onFailure(
+                                    call: Call<Endereco>,
+                                    t: Throwable
+                                ) {
+                                    Log.i("TESTE", "${t.message}")
+                                }
+
+                            })
+
+                        } ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = ""
@@ -176,6 +224,8 @@ fun CepScreen(modifier: Modifier = Modifier) {
                                 enderecos = response.body()!!
                             }
 
+                            //Quando a requisição não é bem sucedida, um 500 provavelmente não cai aqui porque é uma resposta
+                            //Entao teria que ter uma tratativa no onResponse, de só atuar quando for 200
                             override fun onFailure(
                                 call: Call<List<Endereco>>,
                                 t: Throwable
