@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.example.mobile_12_consumo_api.model.Endereco
 import com.example.mobile_12_consumo_api.service.RetrofitFactory
 import com.example.mobile_12_consumo_api.ui.theme.MOBILE_12_ConsumoAPITheme
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -69,13 +71,16 @@ fun CepScreen(modifier: Modifier = Modifier) {
     var cidadeState by remember { mutableStateOf("") }
     var ruaState by remember { mutableStateOf("") }
 
-    var enderecos by remember{ mutableStateOf(listOf<Endereco>())}
+    var enderecos by remember { mutableStateOf(listOf<Endereco>()) }
+
+    var scope = rememberCoroutineScope()
 
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .background(color = Color.Blue)
                 .padding(top = 16.dp, bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -88,7 +93,8 @@ fun CepScreen(modifier: Modifier = Modifier) {
         }
 
         Card(
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
                 .fillMaxWidth()
                 .offset(y = (-30).dp)
         ) {
@@ -135,16 +141,16 @@ fun CepScreen(modifier: Modifier = Modifier) {
                         })
                     * */
                     trailingIcon = {
-                        IconButton( onClick = {
+                        IconButton(onClick = {
                             var call = RetrofitFactory().getEnderecoService().getEnderecoByCep(
                                 cep = cepState
                             )
-                            call.enqueue(object: Callback<Endereco>{
+                            call.enqueue(object : Callback<Endereco> {
                                 override fun onResponse(
                                     call: Call<Endereco>,
                                     response: Response<Endereco>
                                 ) {
-                                    Log.i("TESTE", "${ response.body() }")
+                                    Log.i("TESTE", "${response.body()}")
                                     enderecos = listOf(response.body()!!)
                                 }
 
@@ -157,7 +163,7 @@ fun CepScreen(modifier: Modifier = Modifier) {
 
                             })
 
-                        } ) {
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = ""
@@ -174,7 +180,7 @@ fun CepScreen(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 4.dp),
-                        label = { Text( text = "UF?" ) },
+                        label = { Text(text = "UF?") },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             capitalization = KeyboardCapitalization.Characters
@@ -187,7 +193,7 @@ fun CepScreen(modifier: Modifier = Modifier) {
                         value = cidadeState,
                         onValueChange = { cidadeState = it },
                         modifier = Modifier.weight(2f),
-                        label = { Text( text = "Qual a cidade?" ) },
+                        label = { Text(text = "Qual a cidade?") },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             capitalization = KeyboardCapitalization.Words
@@ -195,7 +201,7 @@ fun CepScreen(modifier: Modifier = Modifier) {
                     )
                 }
 
-                Row( verticalAlignment = Alignment.CenterVertically ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = ruaState,
                         onValueChange = { ruaState = it },
@@ -207,33 +213,49 @@ fun CepScreen(modifier: Modifier = Modifier) {
                         )
                     )
 
-                    IconButton( onClick = {
+                    IconButton(onClick = {
+                        scope.launch {
+                            try {
+                                var enderecos =
+                                    RetrofitFactory().getEnderecoService()
+                                        .getEnderecosByUfCidadeRua(
+                                            uf = ufState,
+                                            cidade = cidadeState,
+                                            rua = ruaState
+                                        )
 
-                        var call = RetrofitFactory().getEnderecoService().getEnderecosByUfCidadeRua(
-                            uf = ufState,
-                            cidade = cidadeState,
-                            rua = ruaState
-                        )
-
-                        call.enqueue(object: Callback<List<Endereco>> {
-                            override fun onResponse(
-                                call: Call<List<Endereco>>,
-                                response: Response<List<Endereco>>
-                            ) {
-//                                Log.i("TESTE", "${ response.body() }")
-                                enderecos = response.body()!!
+                            } catch (e: Exception) {
+                                Log.e("ERROR", e.message?: "")
                             }
 
-                            //Quando a requisição não é bem sucedida, um 500 provavelmente não cai aqui porque é uma resposta
-                            //Entao teria que ter uma tratativa no onResponse, de só atuar quando for 200
-                            override fun onFailure(
-                                call: Call<List<Endereco>>,
-                                t: Throwable
-                            ) {
-                                Log.i("TESTE", "${t.message}")
-                            }
-                        })
-                    } ) {
+                        }
+
+//                        var call =
+//                            RetrofitFactory().getEnderecoService().getEnderecosByUfCidadeRua(
+//                                uf = ufState,
+//                                cidade = cidadeState,
+//                                rua = ruaState
+//                            )
+
+//                        call.enqueue(object: Callback<List<Endereco>> {
+//                            override fun onResponse(
+//                                call: Call<List<Endereco>>,
+//                                response: Response<List<Endereco>>
+//                            ) {
+////                                Log.i("TESTE", "${ response.body() }")
+//                                enderecos = response.body()!!
+//                            }
+//
+//                            //Quando a requisição não é bem sucedida, um 500 provavelmente não cai aqui porque é uma resposta
+//                            //Entao teria que ter uma tratativa no onResponse, de só atuar quando for 200
+//                            override fun onFailure(
+//                                call: Call<List<Endereco>>,
+//                                t: Throwable
+//                            ) {
+//                                Log.i("TESTE", "${t.message}")
+//                            }
+//                        })
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = ""
@@ -256,11 +278,13 @@ fun CepScreen(modifier: Modifier = Modifier) {
 @Composable
 fun CardEndereco(endereco: Endereco) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(bottom = 4.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(8.dp)
         ) {
             Text(text = "CEP: ${endereco.cep}")
